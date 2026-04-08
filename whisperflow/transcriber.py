@@ -1,7 +1,8 @@
-""" transcriber """
+"""Whisper model loader + transcription helpers."""
 
 import os
 import asyncio
+from typing import Optional
 
 import torch
 import numpy as np
@@ -10,17 +11,44 @@ import whisper
 from whisper import Whisper
 
 
-models = {}
+DEFAULT_MODEL = "tiny.en.pt"
+_models = {}
 
 
-def get_model(file_name="tiny.en.pt") -> Whisper:
-    """load models from disk"""
-    if file_name not in models:
-        path = os.path.join(os.path.dirname(__file__), f"./models/{file_name}")
-        models[file_name] = whisper.load_model(path).to(
+def _resolve_model_source(file_name: Optional[str] = None) -> str:
+    """Resolve model source from local file first, then Whisper model alias."""
+    candidate = (file_name or os.getenv("WHISPERFLOW_MODEL_NAME") or DEFAULT_MODEL).strip()
+    package_model_path = os.path.join(os.path.dirname(__file__), "models", candidate)
+
+    if os.path.exists(package_model_path):
+        return package_model_path
+    if os.path.exists(candidate):
+        return candidate
+
+    # Whisper aliases are usually "tiny", "base", "small", etc. without ".pt".
+    if candidate.endswith(".pt"):
+        return candidate[:-3]
+    return candidate
+
+
+def get_model(file_name: Optional[str] = None) -> Whisper:
+    """Load and cache a Whisper model."""
+    source = _resolve_model_source(file_name)
+    if source not in _models:
+        _models[source] = whisper.load_model(source).to(
             "cuda" if torch.cuda.is_available() else "cpu"
         )
-    return models[file_name]
+    return _models[source]
+
+
+def is_model_loaded(file_name: Optional[str] = None) -> bool:
+    """Check whether the resolved model is already loaded in memory."""
+    return _resolve_model_source(file_name) in _models
+
+
+def preload_model(file_name: Optional[str] = None) -> Whisper:
+    """Force model load and return it."""
+    return get_model(file_name)
 
 
 def transcribe_pcm_chunks(

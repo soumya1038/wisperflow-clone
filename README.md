@@ -188,6 +188,61 @@ The server provides:
 - **Health check**: `GET http://localhost:8181/health` - Server status
 - **Batch transcription**: `POST http://localhost:8181/transcribe_pcm_chunk` - Process PCM audio files
 
+Versioned integration routes (recommended for external apps):
+- **Structured health**: `GET http://localhost:8181/v1/health`
+- **Wake endpoint**: `GET|POST http://localhost:8181/v1/wake`
+- **Versioned upload transcription**: `POST http://localhost:8181/v1/transcribe/pcm`
+- **Versioned websocket**: `ws://localhost:8181/v1/ws`
+
+### 3.0 Render Deployment + App Integration Docs
+
+- Render step-by-step guide: [`docs/RENDER_DEPLOY_STEP_BY_STEP.md`](docs/RENDER_DEPLOY_STEP_BY_STEP.md)
+- Full app integration context (mic start/stop, paste, error UX): [`docs/APP_INTEGRATION_CONTEXT.md`](docs/APP_INTEGRATION_CONTEXT.md)
+
+### 3.0.1 Security/Cloud Environment Variables
+
+Use these environment variables when deploying:
+
+- `WHISPERFLOW_API_KEY` - enables API key protection for transcribe/wake/ws routes
+- `WHISPERFLOW_ALLOWED_ORIGINS` - comma-separated frontend origins for CORS
+- `WHISPERFLOW_MODEL_NAME` - model source (`tiny.en.pt` by default)
+- `WHISPERFLOW_WARM_ON_START` - `true/false` warm model in background on boot
+- `WHISPERFLOW_MAX_AUDIO_BYTES` - max upload/chunk size in bytes (default 10485760)
+
+### 3.1 Desktop Dictation App (Windows, Recommended)
+
+Use the desktop app if you want a daily driver experience:
+- Server and client start together automatically
+- Global hotkey dictation + auto-paste
+- Settings UI (hotkey, host/port, auto-start, overlay)
+- Built-in transcription history tab
+- Floating overlay status pill
+
+```powershell
+cd "D:\Projects\VS code\Whisperflow Clone 1\whisper-flow"
+.\.venv\Scripts\python.exe -m whisperflow.desktop_client_windows
+```
+
+Default controls:
+- Press `F8` once: start recording
+- Press `F8` again: stop recording, transcribe, and paste
+
+### 3.2 Daily Dictation Client (Windows, Terminal Only)
+
+If you prefer the lightweight terminal version:
+
+```powershell
+# Terminal 1 - start server
+cd "D:\Projects\VS code\Whisperflow Clone 1\whisper-flow"
+.\.venv\Scripts\python.exe -m uvicorn whisperflow.fast_server:app --host 0.0.0.0 --port 8181
+```
+
+```powershell
+# Terminal 2 - start client
+cd "D:\Projects\VS code\Whisperflow Clone 1\whisper-flow"
+.\.venv\Scripts\python.exe -m whisperflow.daily_client_windows
+```
+
 ### 4. Running Benchmarks
 ```bash
 # Activate environment
