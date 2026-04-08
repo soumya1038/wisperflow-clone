@@ -19,11 +19,15 @@ services:
       - key: WHISPERFLOW_MAX_AUDIO_BYTES
         value: "10485760"
       - key: WHISPERFLOW_MAX_CONCURRENT_TRANSCRIBES
-        value: "2"
+        value: "1"
       - key: WHISPERFLOW_MAX_ACTIVE_WS_SESSIONS
         value: "25"
       - key: WHISPERFLOW_MAX_SESSION_QUEUE_CHUNKS
         value: "64"
+      - key: WHISPERFLOW_CHUNK_SECONDS
+        value: "16"
+      - key: WHISPERFLOW_CHUNK_OVERLAP_SECONDS
+        value: "0.5"
       - key: WHISPERFLOW_COMPUTE_TYPE
         value: int8
       - key: WHISPERFLOW_DEVICE

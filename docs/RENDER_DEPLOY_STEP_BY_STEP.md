@@ -99,6 +99,8 @@ Use these env vars in Render:
 - `WHISPERFLOW_MAX_CONCURRENT_TRANSCRIBES`: recommended `2`
 - `WHISPERFLOW_MAX_ACTIVE_WS_SESSIONS`: recommended `25`
 - `WHISPERFLOW_MAX_SESSION_QUEUE_CHUNKS`: recommended `64`
+- `WHISPERFLOW_CHUNK_SECONDS`: chunk long audio (recommended `16`)
+- `WHISPERFLOW_CHUNK_OVERLAP_SECONDS`: overlap for chunk joins (recommended `0.5`)
 
 ## 7. Routes and Auth Matrix
 
@@ -138,7 +140,11 @@ At your app boot:
 4. `Ran out of memory (used over 512MB)` on Render free:
    - use `tiny.en`, `cpu`, `int8`
    - keep warm-on-start disabled
-   - reduce concurrent transcribes
+   - reduce concurrent transcribes (`1` on free tier)
+5. Long audio fails or times out:
+   - keep `WHISPERFLOW_CHUNK_SECONDS=16`
+   - keep `WHISPERFLOW_CHUNK_OVERLAP_SECONDS=0.5`
+   - use retries in app integration for upload fallback
 4. `audio_too_large`:
    - reduce chunk size or increase `WHISPERFLOW_MAX_AUDIO_BYTES`
 5. WebSocket closes with code `1008`:
