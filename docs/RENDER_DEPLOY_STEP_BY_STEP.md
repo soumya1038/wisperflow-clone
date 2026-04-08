@@ -46,7 +46,7 @@ This guide deploys `whisperflow.fast_server:app` to Render and prepares it for b
 Render will build with:
 
 ```bash
-pip install -r requirements.txt
+pip install -r requirements.server.txt
 ```
 
 and run with:
@@ -54,6 +54,9 @@ and run with:
 ```bash
 uvicorn whisperflow.fast_server:app --host 0.0.0.0 --port $PORT
 ```
+
+If your Render service is configured as a Docker service, this repo's `Dockerfile`
+already starts uvicorn with the Render `PORT` variable.
 
 ## 5. Verify Deployment
 

@@ -1,26 +1,23 @@
-FROM python:3.12-slim-bookworm
+FROM python:3.11-slim-bookworm
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    portaudio19-dev \
-    python3-dev \
-    build-essential \
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+# System packages required by whisper/torch runtime.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ffmpeg \
     && rm -rf /var/lib/apt/lists/*
 
-# Set the working directory
 WORKDIR /app
 
-# Copy requirements first to leverage Docker cache
-COPY requirements.txt .
+# Use runtime-only deps for cloud deploy (faster, smaller, fewer build failures).
+COPY requirements.server.txt ./requirements.server.txt
+RUN pip install --no-cache-dir --upgrade pip wheel setuptools && \
+    pip install --no-cache-dir -r requirements.server.txt
 
-# Install dependencies including the build-time ones we verified
-RUN pip install --upgrade pip wheel && \
-    pip install "setuptools<70" && \
-    pip install -r requirements.txt
-
-# Copy the source code
+# Copy app source.
 COPY . .
 
-# Install the local package
-RUN pip install whisperflow
+# Render injects $PORT; keep 8181 for local docker runs.
+CMD ["sh", "-c", "uvicorn whisperflow.fast_server:app --host 0.0.0.0 --port ${PORT:-8181}"]
 
