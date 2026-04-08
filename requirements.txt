@@ -13,5 +13,6 @@ pytest-benchmark==4.0.0
 websocket-client==1.8.0
 python-multipart==0.0.9
 faster-whisper==1.0.3
+requests>=2.31.0,<3.0
 pylint-fail-under==0.3.0
 uvicorn[standard]==0.30.1
