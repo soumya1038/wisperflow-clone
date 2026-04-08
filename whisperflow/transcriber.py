@@ -8,6 +8,7 @@ import wave
 from concurrent.futures import ThreadPoolExecutor
 from typing import Optional
 
+import av
 import numpy as np
 from faster_whisper import WhisperModel
 
@@ -61,9 +62,40 @@ def _pcm_bytes_to_float32(audio_bytes: bytes) -> np.ndarray:
             pcm = pcm.reshape(-1, channels).mean(axis=1)
         return pcm / 32768.0
 
-    # Unsupported compressed containers should be rejected explicitly.
-    if audio_bytes.startswith(b"\x1aE\xdf\xa3") or audio_bytes.startswith(b"OggS"):
-        raise ValueError("Compressed audio container not supported. Send PCM16 or WAV.")
+    # Browser media containers (webm/ogg/mp4/m4a) decode path.
+    is_container = (
+        audio_bytes.startswith(b"\x1aE\xdf\xa3")  # webm/matroska
+        or audio_bytes.startswith(b"OggS")  # ogg
+        or (len(audio_bytes) > 8 and audio_bytes[4:8] == b"ftyp")  # mp4/m4a
+    )
+    if is_container:
+        try:
+            with av.open(io.BytesIO(audio_bytes), mode="r") as container:
+                resampler = av.audio.resampler.AudioResampler(
+                    format="s16",
+                    layout="mono",
+                    rate=16000,
+                )
+                chunks: list[np.ndarray] = []
+                for frame in container.decode(audio=0):
+                    resampled_frames = resampler.resample(frame)
+                    if not isinstance(resampled_frames, list):
+                        resampled_frames = [resampled_frames]
+                    for resampled in resampled_frames:
+                        chunk = resampled.to_ndarray()
+                        if chunk.ndim == 2:
+                            chunk = chunk[0]
+                        chunks.append(chunk.astype(np.int16, copy=False))
+
+            if not chunks:
+                return np.array([], dtype=np.float32)
+
+            pcm = np.concatenate(chunks).astype(np.float32)
+            return pcm / 32768.0
+        except Exception as exc:
+            raise ValueError(
+                "Unable to decode uploaded audio. Supported formats: PCM16, WAV, WebM, OGG, MP4/M4A."
+            ) from exc
 
     # Raw PCM16 path.
     return np.frombuffer(audio_bytes, np.int16).astype(np.float32) / 32768.0
