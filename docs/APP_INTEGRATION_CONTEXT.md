@@ -287,6 +287,7 @@ Map server errors to user-facing text:
 
 - `unauthorized` -> `Session expired. Please refresh and try again.`
 - `audio_too_large` -> `Audio too large. Please record a shorter segment.`
+- `server_busy` -> `Voice service is busy. Please try again in a few seconds.`
 - `empty_audio` -> `No audio captured. Check your microphone.`
 - `transcription_failed` -> `Transcription failed. Please retry.`
 - `ws_session_error` -> `Connection dropped during dictation.`
@@ -307,7 +308,7 @@ If WebSocket is blocked, use one-shot HTTP upload:
 ```ts
 async function transcribeViaUpload(blob: Blob, apiKey: string) {
   const form = new FormData();
-  form.append("model_name", "tiny.en.pt");
+  form.append("model_name", "tiny.en");
   form.append("files", blob, "audio.webm");
 
   const res = await fetch("https://whisperflow-api.onrender.com/v1/transcribe/pcm", {

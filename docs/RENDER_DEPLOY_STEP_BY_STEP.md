@@ -92,8 +92,13 @@ Use these env vars in Render:
 - `WHISPERFLOW_API_KEY`: required for protected routes and WS
 - `WHISPERFLOW_ALLOWED_ORIGINS`: strict CORS allowlist
 - `WHISPERFLOW_MAX_AUDIO_BYTES`: max upload/chunk bytes (default 10MB)
-- `WHISPERFLOW_MODEL_NAME`: default model source (default `tiny.en.pt`)
-- `WHISPERFLOW_WARM_ON_START`: `true` to start warmup at boot
+- `WHISPERFLOW_MODEL_NAME`: default model source (use `tiny.en` on free plan)
+- `WHISPERFLOW_WARM_ON_START`: keep `false` on free plan to reduce startup memory
+- `WHISPERFLOW_DEVICE`: `cpu`
+- `WHISPERFLOW_COMPUTE_TYPE`: `int8`
+- `WHISPERFLOW_MAX_CONCURRENT_TRANSCRIBES`: recommended `2`
+- `WHISPERFLOW_MAX_ACTIVE_WS_SESSIONS`: recommended `25`
+- `WHISPERFLOW_MAX_SESSION_QUEUE_CHUNKS`: recommended `64`
 
 ## 7. Routes and Auth Matrix
 
@@ -130,6 +135,10 @@ At your app boot:
    - `WHISPERFLOW_ALLOWED_ORIGINS` does not include your domain
 3. Slow first transcription:
    - cold start + model load; use `/v1/wake` on app load
+4. `Ran out of memory (used over 512MB)` on Render free:
+   - use `tiny.en`, `cpu`, `int8`
+   - keep warm-on-start disabled
+   - reduce concurrent transcribes
 4. `audio_too_large`:
    - reduce chunk size or increase `WHISPERFLOW_MAX_AUDIO_BYTES`
 5. WebSocket closes with code `1008`:

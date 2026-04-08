@@ -6,6 +6,7 @@ ENV PYTHONUNBUFFERED=1
 # System packages required by whisper/torch runtime.
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ffmpeg \
+    libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app

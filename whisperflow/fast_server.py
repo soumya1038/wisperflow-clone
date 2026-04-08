@@ -30,11 +30,12 @@ from whisperflow import __version__
 logger = logging.getLogger(__name__)
 
 SERVICE_NAME = "whisper-flow"
-DEFAULT_MODEL_NAME = os.getenv("WHISPERFLOW_MODEL_NAME", "tiny.en.pt").strip() or "tiny.en.pt"
+DEFAULT_MODEL_NAME = os.getenv("WHISPERFLOW_MODEL_NAME", "tiny.en").strip() or "tiny.en"
 MAX_AUDIO_BYTES = int(os.getenv("WHISPERFLOW_MAX_AUDIO_BYTES", str(10 * 1024 * 1024)))
 API_KEY = (os.getenv("WHISPERFLOW_API_KEY") or "").strip()
 AUTH_REQUIRED = bool(API_KEY)
 WARM_ON_START = (os.getenv("WHISPERFLOW_WARM_ON_START", "false").strip().lower() in {"1", "true", "yes"})
+MAX_ACTIVE_WS_SESSIONS = max(1, int(os.getenv("WHISPERFLOW_MAX_ACTIVE_WS_SESSIONS", "25")))
 ALLOWED_ORIGINS = [
     origin.strip()
     for origin in os.getenv("WHISPERFLOW_ALLOWED_ORIGINS", "*").split(",")
@@ -70,11 +71,12 @@ def _startup_hook() -> None:
     if WARM_ON_START:
         _start_background_warmup()
     logger.info(
-        "WhisperFlow server started: version=%s model=%s auth=%s warm_on_start=%s",
+        "WhisperFlow server started: version=%s model=%s auth=%s warm_on_start=%s max_ws_sessions=%s",
         __version__,
         DEFAULT_MODEL_NAME,
         AUTH_REQUIRED,
         WARM_ON_START,
+        MAX_ACTIVE_WS_SESSIONS,
     )
 
 
@@ -290,6 +292,18 @@ def transcribe_pcm_chunk_v1(model_name: str = Form(DEFAULT_MODEL_NAME), files: L
 async def _run_ws_session(websocket: WebSocket) -> None:
     """Shared websocket session handler for /ws and /v1/ws."""
     model_name = (websocket.query_params.get("model_name") or DEFAULT_MODEL_NAME).strip() or DEFAULT_MODEL_NAME
+    if len(sessions) >= MAX_ACTIVE_WS_SESSIONS:
+        await websocket.accept()
+        await websocket.send_json(
+            _error_payload(
+                "server_busy",
+                "Too many active transcription sessions. Please retry shortly.",
+                {"max_active_sessions": MAX_ACTIVE_WS_SESSIONS},
+            )
+        )
+        await websocket.close(code=1013)
+        return
+
     model = ts.get_model(model_name)
     session = None
 

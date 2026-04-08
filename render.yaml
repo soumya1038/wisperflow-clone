@@ -11,12 +11,22 @@ services:
       - key: PYTHON_VERSION
         value: 3.11.9
       - key: WHISPERFLOW_MODEL_NAME
-        value: tiny.en.pt
+        value: tiny.en
       - key: WHISPERFLOW_ALLOWED_ORIGINS
         value: https://your-app-domain.com
       - key: WHISPERFLOW_WARM_ON_START
-        value: "true"
+        value: "false"
       - key: WHISPERFLOW_MAX_AUDIO_BYTES
         value: "10485760"
+      - key: WHISPERFLOW_MAX_CONCURRENT_TRANSCRIBES
+        value: "2"
+      - key: WHISPERFLOW_MAX_ACTIVE_WS_SESSIONS
+        value: "25"
+      - key: WHISPERFLOW_MAX_SESSION_QUEUE_CHUNKS
+        value: "64"
+      - key: WHISPERFLOW_COMPUTE_TYPE
+        value: int8
+      - key: WHISPERFLOW_DEVICE
+        value: cpu
       - key: WHISPERFLOW_API_KEY
         sync: false

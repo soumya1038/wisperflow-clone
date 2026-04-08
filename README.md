@@ -205,9 +205,12 @@ Use these environment variables when deploying:
 
 - `WHISPERFLOW_API_KEY` - enables API key protection for transcribe/wake/ws routes
 - `WHISPERFLOW_ALLOWED_ORIGINS` - comma-separated frontend origins for CORS
-- `WHISPERFLOW_MODEL_NAME` - model source (`tiny.en.pt` by default)
+- `WHISPERFLOW_MODEL_NAME` - model source (`tiny.en` recommended on free tier)
 - `WHISPERFLOW_WARM_ON_START` - `true/false` warm model in background on boot
 - `WHISPERFLOW_MAX_AUDIO_BYTES` - max upload/chunk size in bytes (default 10485760)
+- `WHISPERFLOW_DEVICE` - `cpu` recommended on Render free
+- `WHISPERFLOW_COMPUTE_TYPE` - `int8` recommended on Render free
+- `WHISPERFLOW_MAX_CONCURRENT_TRANSCRIBES` - keep low (for example `2`) on 512MB plans
 
 ### 3.1 Desktop Dictation App (Windows, Recommended)
 
@@ -310,7 +313,7 @@ app = FastAPI()
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
-    # Load the Whisper model (default: tiny.en.pt)
+    # Load the Whisper model (default: tiny.en)
     model = ts.get_model()
     
     # Define transcription callback
@@ -345,7 +348,7 @@ async def websocket_endpoint(websocket: WebSocket):
 ### API Reference
 
 **Transcriber Module** (`whisperflow.transcriber`):
-- `get_model(file_name="tiny.en.pt")` - Load a Whisper model
+- `get_model(file_name="tiny.en")` - Load a Whisper model
 - `transcribe_pcm_chunks(model, chunks, lang="en")` - Synchronous transcription
 - `transcribe_pcm_chunks_async(model, chunks, lang="en")` - Async transcription
 

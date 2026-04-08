@@ -1,9 +1,10 @@
 """ test scenario module """
 
+import os
 import time
 import uuid
 import asyncio
-from queue import Queue
+from queue import Empty, Full, Queue
 from typing import Callable
 
 
@@ -63,8 +64,10 @@ class TranscribeSession:  # pylint: disable=too-few-public-methods
 
     def __init__(self, transcribe_async, send_back_async) -> None:
         """ctor"""
+        max_chunks = max(8, int(os.getenv("WHISPERFLOW_MAX_SESSION_QUEUE_CHUNKS", "64")))
         self.id = uuid.uuid4()  # pylint: disable=invalid-name
-        self.queue = Queue()
+        self.queue = Queue(maxsize=max_chunks)
+        self.dropped_chunks = 0
         self.should_stop = [False]
         self.task = asyncio.create_task(
             transcribe(self.should_stop, self.queue, transcribe_async, send_back_async)
@@ -72,7 +75,22 @@ class TranscribeSession:  # pylint: disable=too-few-public-methods
 
     def add_chunk(self, chunk: bytes):
         """add new chunk"""
-        self.queue.put_nowait(chunk)
+        try:
+            self.queue.put_nowait(chunk)
+            return
+        except Full:
+            self.dropped_chunks += 1
+
+        # Keep newest audio under backpressure by discarding oldest chunk.
+        try:
+            self.queue.get_nowait()
+        except Empty:
+            pass
+
+        try:
+            self.queue.put_nowait(chunk)
+        except Full:
+            self.dropped_chunks += 1
 
     async def stop(self):
         """stop session"""
